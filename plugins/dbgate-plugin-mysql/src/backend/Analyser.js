@@ -90,26 +90,30 @@ class Analyser extends DatabaseAnalyser {
   }
 
   async _runAnalysis() {
-    this.feedback({ analysingMessage: 'Loading tables' });
-    const tables = await this.analyserQuery('tables', ['tables']);
-    this.feedback({ analysingMessage: 'Loading columns' });
-    const columns = await this.analyserQuery('columns', ['tables', 'views']);
-    this.feedback({ analysingMessage: 'Loading primary keys' });
-    const pkColumns = await this.analyserQuery('primaryKeys', ['tables']);
-    this.feedback({ analysingMessage: 'Loading foreign keys' });
-    const fkColumns = await this.analyserQuery('foreignKeys', ['tables']);
-    this.feedback({ analysingMessage: 'Loading views' });
-    const views = await this.analyserQuery('views', ['views']);
-    this.feedback({ analysingMessage: 'Loading programmables' });
-    const programmables = await this.analyserQuery('programmables', ['procedures', 'functions']);
+    this.feedback({ analysingMessage: 'Loading database structure' });
 
-    this.feedback({ analysingMessage: 'Loading view texts' });
+    const [
+      tables,
+      columns,
+      pkColumns,
+      fkColumns,
+      views,
+      programmables,
+      indexes,
+      uniqueNames,
+
+    ] = await Promise.all([
+      this.analyserQuery('tables', ['tables']),
+      this.analyserQuery('columns', ['tables', 'views']),
+      this.analyserQuery('primaryKeys', ['tables']),
+      this.analyserQuery('foreignKeys', ['tables']),
+      this.analyserQuery('views', ['views']),
+      this.analyserQuery('programmables', ['procedures', 'functions']),
+      this.analyserQuery('indexes', ['tables']),
+      this.analyserQuery('uniqueNames', ['tables']),
+    ]);
+
     const viewTexts = await this.getViewTexts(views.rows.map(x => x.pureName));
-    this.feedback({ analysingMessage: 'Loading indexes' });
-    const indexes = await this.analyserQuery('indexes', ['tables']);
-    this.feedback({ analysingMessage: 'Loading uniques' });
-    const uniqueNames = await this.analyserQuery('uniqueNames', ['tables']);
-    this.feedback({ analysingMessage: 'Finalizing DB structure' });
 
     const res = {
       tables: tables.rows.map(table => ({
